@@ -1,26 +1,7 @@
-import { useStore } from '@nanostores/react';
 import type { LinksFunction } from '@remix-run/cloudflare';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react';
+import { Links, Meta, Scripts, ScrollRestoration } from '@remix-run/react';
 import tailwindReset from '@unocss/reset/tailwind-compat.css?url';
-import { themeStore } from './lib/stores/theme';
-import { stripIndents } from './utils/stripIndent';
 import { createHead } from 'remix-island';
-import { useEffect } from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { ClientOnly } from 'remix-utils/client-only';
-import { cssTransition, ToastContainer } from 'react-toastify';
-
-import reactToastifyStyles from 'react-toastify/dist/ReactToastify.css?url';
-import globalStyles from './styles/index.scss?url';
-import xtermStyles from '@xterm/xterm/css/xterm.css?url';
-
-import 'virtual:uno.css';
-
-const toastAnimation = cssTransition({
-  enter: 'animated fadeInRight',
-  exit: 'animated fadeOutRight',
-});
 
 export const links: LinksFunction = () => [
   {
@@ -28,10 +9,7 @@ export const links: LinksFunction = () => [
     href: '/favicon.svg',
     type: 'image/svg+xml',
   },
-  { rel: 'stylesheet', href: reactToastifyStyles },
   { rel: 'stylesheet', href: tailwindReset },
-  { rel: 'stylesheet', href: globalStyles },
-  { rel: 'stylesheet', href: xtermStyles },
   {
     rel: 'preconnect',
     href: 'https://fonts.googleapis.com',
@@ -47,106 +25,71 @@ export const links: LinksFunction = () => [
   },
 ];
 
-const inlineThemeCode = stripIndents`
-  setTutorialKitTheme();
-
-  function setTutorialKitTheme() {
-    let theme = localStorage.getItem('bolt_theme');
-
-    if (!theme) {
-      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-
-    document.querySelector('html')?.setAttribute('data-theme', theme);
-  }
-`;
-
 export const Head = createHead(() => (
   <>
     <meta charSet="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <Meta />
     <Links />
-    <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
   </>
 ));
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const theme = useStore(themeStore);
-
-  useEffect(() => {
-    document.querySelector('html')?.setAttribute('data-theme', theme);
-  }, [theme]);
-
   return (
     <>
-      <ClientOnly>{() => <DndProvider backend={HTML5Backend}>{children}</DndProvider>}</ClientOnly>
-      <ToastContainer
-        closeButton={({ closeToast }) => {
-          return (
-            <button className="Toastify__close-button" onClick={closeToast}>
-              <div className="i-ph:x text-lg" />
-            </button>
-          );
-        }}
-        icon={({ type }) => {
-          switch (type) {
-            case 'success': {
-              return <div className="i-ph:check-bold text-bolt-elements-icon-success text-2xl" />;
-            }
-            case 'error': {
-              return <div className="i-ph:warning-circle-bold text-bolt-elements-icon-error text-2xl" />;
-            }
-          }
-
-          return undefined;
-        }}
-        position="bottom-right"
-        pauseOnFocusLoss
-        transition={toastAnimation}
-        autoClose={3000}
-      />
+      {children}
       <ScrollRestoration />
       <Scripts />
     </>
   );
 }
 
-import { logStore } from './lib/stores/logs';
+function MaintenancePage() {
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        color: '#e0e0e0',
+        padding: '1rem',
+      }}
+    >
+      <div style={{ textAlign: 'center', maxWidth: '480px' }}>
+        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔧</div>
+        <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.75rem', color: '#ffffff' }}>
+          Under Maintenance
+        </h1>
+        <p style={{ fontSize: '1.1rem', lineHeight: 1.6, color: '#a0aec0', marginBottom: '2rem' }}>
+          We are currently performing scheduled maintenance.
+          <br />
+          Please check back shortly.
+        </p>
+        <div
+          style={{
+            display: 'inline-block',
+            padding: '0.5rem 1.5rem',
+            borderRadius: '9999px',
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            fontSize: '0.875rem',
+            color: '#a0aec0',
+          }}
+        >
+          bolt.diy
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
-  const theme = useStore(themeStore);
-
-  useEffect(() => {
-    logStore.logSystem('Application initialized', {
-      theme,
-      platform: navigator.platform,
-      userAgent: navigator.userAgent,
-      timestamp: new Date().toISOString(),
-    });
-
-    // Initialize debug logging with improved error handling
-    import('./utils/debugLogger')
-      .then(({ debugLogger }) => {
-        /*
-         * The debug logger initializes itself and starts disabled by default
-         * It will only start capturing when enableDebugMode() is called
-         */
-        const status = debugLogger.getStatus();
-        logStore.logSystem('Debug logging ready', {
-          initialized: status.initialized,
-          capturing: status.capturing,
-          enabled: status.enabled,
-        });
-      })
-      .catch((error) => {
-        logStore.logError('Failed to initialize debug logging', error);
-      });
-  }, []);
-
   return (
     <Layout>
-      <Outlet />
+      <MaintenancePage />
     </Layout>
   );
 }
